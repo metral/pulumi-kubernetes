@@ -557,7 +557,7 @@ func Test_Apps_Deployment(t *testing.T) {
 		go test.do(deployments, replicaSets, pods, timeout)
 
 		err := awaiter.await(&chanWatcher{results: deployments}, &chanWatcher{results: replicaSets},
-			&chanWatcher{results: pods}, timeout, period)
+			&chanWatcher{results: pods}, nil, timeout, period)
 		assert.Equal(t, test.expectedError, err, test.description)
 	}
 }
@@ -615,7 +615,7 @@ func Test_Apps_Deployment_MultipleUpdates(t *testing.T) {
 			})
 
 		err := awaiter.await(&chanWatcher{results: deployments}, &chanWatcher{results: replicaSets},
-			&chanWatcher{results: pods}, timeout, period)
+			&chanWatcher{results: pods}, nil, timeout, period)
 		assert.Nil(t, err, test.description)
 
 		deployments = make(chan watch.Event)
@@ -627,7 +627,7 @@ func Test_Apps_Deployment_MultipleUpdates(t *testing.T) {
 		go test.secondUpdate(deployments, replicaSets, pods, timeout)
 
 		err = awaiter.await(&chanWatcher{results: deployments}, &chanWatcher{results: replicaSets},
-			&chanWatcher{results: pods}, timeout, period)
+			&chanWatcher{results: pods}, nil, timeout, period)
 		assert.Equal(t, test.expectedError, err, test.description)
 	}
 }
@@ -755,7 +755,7 @@ func Test_Core_Deployment_Read(t *testing.T) {
 			})
 		service := test.deployment("default", "foo-4setj4y6", test.deploymentRevision)
 		replicaset := test.replicaset("default", "foo-4setj4y6", "foo-4setj4y6", test.replicaSetRevision)
-		err := awaiter.read(service, unstructuredList(*replicaset), unstructuredList())
+		err := awaiter.read(service, unstructuredList(*replicaset), unstructuredList(), unstructuredList())
 		if test.expectedSubErrors != nil {
 			assert.Equal(t, test.expectedSubErrors, err.(*initializationError).SubErrors(), test.description)
 		} else {
