@@ -180,7 +180,7 @@ func (dia *deploymentInitAwaiter) Await() error {
 	period := time.NewTicker(10 * time.Second)
 	defer period.Stop()
 
-	return dia.await(deploymentWatcher, replicaSetWatcher, podWatcher, pvcWatcher, time.After(5*time.Minute), period.C)
+	return dia.await(deploymentWatcher, replicaSetWatcher, podWatcher, pvcWatcher, time.After(20*time.Second), period.C)
 }
 
 func (dia *deploymentInitAwaiter) Read() error {

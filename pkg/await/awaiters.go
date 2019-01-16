@@ -363,7 +363,7 @@ func untilCoreV1NamespaceDeleted(
 	}
 
 	return watcher.ForObject(ctx, clientForResource, name).
-		RetryUntil(namespaceMissingOrKilled, 5*time.Minute)
+		RetryUntil(namespaceMissingOrKilled, 20*time.Second)
 }
 
 // --------------------------------------------------------------------------
@@ -385,7 +385,7 @@ func untilCoreV1PersistentVolumeInitialized(c createAwaitConfig) error {
 	}
 
 	return watcher.ForObject(c.ctx, c.clientForResource, c.currentInputs.GetName()).
-		WatchUntil(pvAvailableOrBound, 5*time.Minute)
+		WatchUntil(pvAvailableOrBound, 20*time.Second)
 }
 
 // --------------------------------------------------------------------------
@@ -402,7 +402,7 @@ func untilCoreV1PersistentVolumeClaimBound(c createAwaitConfig) error {
 	}
 
 	return watcher.ForObject(c.ctx, c.clientForResource, c.currentInputs.GetName()).
-		WatchUntil(pvcBound, 5*time.Minute)
+		WatchUntil(pvcBound, 20*time.Second)
 }
 
 // --------------------------------------------------------------------------
@@ -428,7 +428,7 @@ func untilCoreV1PodDeleted(
 	}
 
 	return watcher.ForObject(ctx, clientForResource, name).
-		RetryUntil(podMissingOrKilled, 5*time.Minute)
+		RetryUntil(podMissingOrKilled, 20*time.Second)
 }
 
 // --------------------------------------------------------------------------
@@ -588,7 +588,7 @@ func untilCoreV1ServiceAccountInitialized(c createAwaitConfig) error {
 	}
 
 	return watcher.ForObject(c.ctx, c.clientForResource, c.currentInputs.GetName()).
-		WatchUntil(defaultSecretAllocated, 5*time.Minute)
+		WatchUntil(defaultSecretAllocated, 20*time.Second)
 }
 
 // --------------------------------------------------------------------------
