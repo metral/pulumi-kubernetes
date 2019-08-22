@@ -59,7 +59,9 @@ for more details.
 ## References
 
 * [Reference Documentation](https://www.pulumi.com/docs/reference/clouds/kubernetes/)
-* [API Documentation](https://pulumi.io/reference/pkg/nodejs/@pulumi/kubernetes/index.html)
+* API Documentation
+    * [Node.js API ](https://pulumi.io/reference/pkg/nodejs/@pulumi/kubernetes)
+    * [Python API](https://www.pulumi.com/docs/reference/pkg/python/pulumi_kubernetes/)
 * [All Examples](./nodejs/eks/examples)
 * [Tutorials](https://www.pulumi.com/docs/reference/tutorials/kubernetes/)
 
