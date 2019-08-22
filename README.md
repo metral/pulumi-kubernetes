@@ -61,6 +61,7 @@ for more details.
 * [Reference Documentation](https://www.pulumi.com/docs/reference/clouds/kubernetes/)
 * [API Documentation](https://pulumi.io/reference/pkg/nodejs/@pulumi/kubernetes/index.html)
 * [All Examples](./nodejs/eks/examples)
+* [Tutorials](https://www.pulumi.com/docs/reference/tutorials/kubernetes/)
 
 ## Pre-Requisites
 
