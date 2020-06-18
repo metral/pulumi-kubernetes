@@ -42,18 +42,19 @@ const prometheusOperator = new PrometheusOperator("prometheus", {
     namespace: "default",
 });
 
-// Use the k8s JS client (https://github.com/kubernetes-client/javascript)
-// to retrieve resource created by the operator as a workaround for:
-// https://github.com/pulumi/pulumi-kubernetes/issues/1056
-const kc = new k8sClient.KubeConfig();
-kc.loadFromDefault();
-const kApi = kc.makeApiClient(k8sClient.ApiextensionsV1Api)
-
 // Create the Prometheus Operator ServiceMonitor.
-const myMonitoring = pulumi.output(utils.checkCrdStatus(kApi)).apply(ready => {
-    if(!ready){
+const myMonitoring = pulumi.output(prometheusOperator).apply(async () =>  {
+    // Use the k8s JS client (https://github.com/kubernetes-client/javascript)
+    // to retrieve resource created by the operator as a workaround for:
+    // https://github.com/pulumi/pulumi-kubernetes/issues/1056
+    const kc = new k8sClient.KubeConfig();
+    kc.loadFromDefault();
+    const kApi = kc.makeApiClient(k8sClient.ApiextensionsV1Api)
+
+    if(!utils.checkCrdStatus(kApi)){
         throw new Error("CRD is not ready");
     }
+
     return new k8s.apiextensions.CustomResource('my-monitoring', {
         apiVersion: 'monitoring.coreos.com/v1',
         kind: 'ServiceMonitor',
