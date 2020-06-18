@@ -1,5 +1,7 @@
 import * as k8s from "@pulumi/kubernetes";
 import * as pulumi from "@pulumi/pulumi";
+import * as k8sClient from "@kubernetes/client-node";
+import * as utils from "./utils";
 
 // PrometheusOperatorArgs are the options to configure on the CoreOS
 // PrometheusOperator.
@@ -9,8 +11,9 @@ interface PrometheusOperatorArgs {
 }
 
 // PrometheusOperator implements the CoreOS Prometheus Operator.
-export class PrometheusOperator extends pulumi.ComponentResource {
+class PrometheusOperator extends pulumi.ComponentResource {
     public readonly configFile: k8s.yaml.ConfigFile;
+    public readonly serviceMonitorReady: boolean;
     constructor(
         name: string,
         args: PrometheusOperatorArgs,
@@ -18,21 +21,19 @@ export class PrometheusOperator extends pulumi.ComponentResource {
     ) {
         super('pulumi:monitoring/v1:PrometheusOperator', name, {}, opts);
 
-        this.configFile = new k8s.yaml.ConfigFile(
-            name,
-            {
-                file: `https://github.com/coreos/prometheus-operator/raw/release-${args.version || '0.38'}/bundle.yaml`,
-                transformations: [
-                    obj => {
-                        if (obj.metadata.namespace) {
-                            obj.metadata.namespace = args.namespace;
-                        }
-                        if (obj.kind === 'ClusterRoleBinding') {
-                            obj.subjects[0].namespace = args.namespace;
-                        }
-                    },
-                ],
-            }, { parent: this });
+        this.configFile = new k8s.yaml.ConfigFile(name, {
+            file: `https://github.com/coreos/prometheus-operator/raw/release-${args.version || '0.38'}/bundle.yaml`,
+            transformations: [
+                obj => {
+                    if (obj.metadata.namespace) {
+                        obj.metadata.namespace = args.namespace;
+                    }
+                    if (obj.kind === 'ClusterRoleBinding') {
+                        obj.subjects[0].namespace = args.namespace;
+                    }
+                },
+            ],
+        }, {parent: this});
     }
 }
 
@@ -41,38 +42,52 @@ const prometheusOperator = new PrometheusOperator("prometheus", {
     namespace: "default",
 });
 
+// Use the k8s JS client (https://github.com/kubernetes-client/javascript)
+// to retrieve resource created by the operator as a workaround for:
+// https://github.com/pulumi/pulumi-kubernetes/issues/1056
+const kc = new k8sClient.KubeConfig();
+kc.loadFromDefault();
+const kApi = kc.makeApiClient(k8sClient.ApiextensionsV1Api)
+
 // Create the Prometheus Operator ServiceMonitor.
-const myMonitoring = new k8s.apiextensions.CustomResource('my-monitoring', {
-    apiVersion: 'monitoring.coreos.com/v1',
-    kind: 'ServiceMonitor',
-    spec: {
-        selector: {
-            matchLabels: { app: 'my-app' },
-        },
-        endpoints: [
-            {
-                port: 'http',
-                interval: '65s',
-                // start with the following
-                relabelings: [
-                    {
-                        regex: '(.*)',
-                        targetLabel: 'stackdriver',
-                        replacement: 'true',
-                        action: 'replace'
-                    }
-                ],
-                // try to add the following in replacement of above in steps/step1.ts
-                // metricRelabelings: [
-                //   {
-                //     sourceLabels: ['__name__'],
-                //     regex: 'typhoon_(.*)',
-                //     targetLabel: 'stackdriver',
-                //     replacement: 'true',
-                //     action: 'replace'
-                //   }
-                // ]
+const myMonitoring = pulumi.output(utils.checkCrdStatus(kApi)).apply(ready => {
+    if(!ready){
+        throw new Error("CRD is not ready");
+    }
+    return new k8s.apiextensions.CustomResource('my-monitoring', {
+        apiVersion: 'monitoring.coreos.com/v1',
+        kind: 'ServiceMonitor',
+        spec: {
+            selector: {
+                matchLabels: { app: 'my-app' },
             },
-        ],
-    },
-}, {dependsOn: prometheusOperator});
+            endpoints: [
+                {
+                    port: 'http',
+                    interval: '65s',
+                    // start with the following
+                    relabelings: [
+                        {
+                            regex: '(.*)',
+                            targetLabel: 'stackdriver',
+                            replacement: 'true',
+                            action: 'replace'
+                        }
+                    ],
+                    // try to add the following in replacement of above in steps/step1.ts
+                    // metricRelabelings: [
+                    //   {
+                    //     sourceLabels: ['__name__'],
+                    //     regex: 'typhoon_(.*)',
+                    //     targetLabel: 'stackdriver',
+                    //     replacement: 'true',
+                    //     action: 'replace'
+                    //   }
+                    // ]
+                },
+            ],
+        },
+    });
+})
+
+export const myMonitoringName = myMonitoring.id;
